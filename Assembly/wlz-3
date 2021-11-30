@@ -9,10 +9,10 @@ DATA SEGMENT
                  DW 196,330,294,330,370,330,294,1,294,1,196,330,294,330,440,330,294,1,294,1;6323432,2,63236322,
                  DW 196,294,330,370,391,440,370,330,294,-1;623456432
 
-    sincerelyTime DW 25,50,25,50,25,50,25,3,47,25,25,50,25,50,25,50,25,3,47,25
+    sincerelyTime DW 25,50,25,50,25,75,25,3,47,25,25,50,25,50,25,75,25,3,47,25
                  DW 25,50,50,50,125,25,3,47,25,25,50,25,50,25,150,25
-                 DW 25,50,25,50,25,50,25,3,47,25,25,50,25,50,25,50,25,3,47,25
-                 DW 25,50,25,50,25,50,25,25,125
+                 DW 25,50,25,50,25,75,25,3,47,25,25,50,25,50,25,75,25,3,47,25
+                 DW 25,50,25,75,25,75,25,25,125
         edplaying DB "ED: mi chi si ru be",'$'
         edmusicInfo DB "beng bu zhu le",'$'
         edFreq DW 262,1,262,1,262,294,262,294,330,1,391,330,294,262,1,262,1;1,1,12123,5321,1,
@@ -59,12 +59,12 @@ DATA SEGMENT
     TIPS7 DB     7CH," Quit This Program:Q",7CH,'$'
     LINE_BREAK DB 0AH,0DH,'$'
     Info DB "Never know what love means.",'$'
-    colorIndex DB 0F8H
+    colorIndex DB 0F7H
     colorHigh DB 00H
-    colorLow DB 09H
+    colorLow DB 08H
     BUFFER DB 1000 DUP(0)        ;通用缓冲区
     ;显示日期时间所需变量
-    DATE DB "DATE",1AH,"0000/00/00|000",'$','$'
+    DATE DB "DATE:0000/00/00|000",'$','$'
     WEEK DB "MON","TUS","WED","THS","FRI","SAT","SUN" ;星期
     TIME DB "00:00:00",'$','$'
     DATE_X DB 2                ;图形模式下x坐标范围0~49,y坐标范围0~39 
@@ -197,17 +197,15 @@ MAIN_SHOW:
         CALL SHOW_TIPS                  ;显示提示信息
 ;主循环
 MAIN_LOOP:         
-        MOV AH,01H                      ;键盘输入,不等待
+        MOV AH,01H                      ;键盘输入
         INT 16H     
         JNZ SCAN_BUTTON                 ;判断输入
-        
         SHOW_STR CLK_NAME,1,2
         SHOW_STR TIME,2,2              ;显示时钟
         CMP timerStop_Flag,1
         JE NEXT1
         SHOW_STR TIMER_NAME,6,2
-        SHOW_STR timerStr,7,2           ;显示计时器
-                   
+        SHOW_STR timerStr,7,2           ;显示计时器           
         NEXT1:
                 CMP secUpdate,1                 ;8253的秒位发生变化
                 JAE SEC_PASSED
@@ -219,11 +217,11 @@ MAIN_LOOP:
                 JMP MAIN_LOOP
         SEC_PASSED:     
                 CALL SHOW_IMG                   ;显示图片
-                ;CALL SHOW_TIPS                  ;显示提示信息
+                CALL SHOW_TIPS                  ;显示提示信息
                 SHOW_STR CLK_NAME,1,2
                 SHOW_STR TIME,2,2              ;显示时钟
-                ;SHOW_STR TIMER_NAME,6,2
-                ;SHOW_STR timerStr,7,2         ;显示计时器
+                SHOW_STR TIMER_NAME,6,2
+                SHOW_STR timerStr,7,2         ;显示计时器
                 CALL DRAW_STARS
                 MOV secUpdate,0         ;时间复位
                 CALL GET_TIME_FROM_CLK
@@ -306,9 +304,11 @@ MAIN_LOOP:
                         MOV timerStart_Flag,1
                         MOV timerStop_Flag,0
                         CALL TIMER_INIT          ;定时器初始化
-                        CALL TIMER_ENABLE       ;定时器使能                       
+                        CALL TIMER_ENABLE       ;定时器使能 
+                        CALL DRAW_STARS                      
                         JMP MAIN_LOOP
                 PRESS_S:        
+                        MOV timerStart_Flag,0
                         MOV timerStop_Flag,1
                         JMP MAIN_LOOP
                 PRESS_R:
@@ -320,9 +320,8 @@ MAIN_LOOP:
                         MOV starX,1
                         SHOW_STR TIMER_NAME,6,2
                         SHOW_STR timerStr,7,2
-                        JMP MAIN_LOOP
+                        JMP MAIN_SHOW
                 PRESS_E:
-                        CALL CLR_SRC
                         LEA DX,ED
                         CALL CLR_SRC
                         CALL OPEN_PHOTO
@@ -369,7 +368,85 @@ CLR_SRC PROC
         POP AX
         RET
 CLR_SRC ENDP
+; music
+;  播放音乐
+music proc near
+     xor ax, ax
+freg:
+     mov di, [si]       ;di为频率
+     cmp di, 0FFFFH     ;若为-1则停止播放
+     je end_mus
+     mov bx, ds:[bp]    ;bx为节拍
+     call GEN_SOUND
+     add si, 2
+     add bp, 2
+     jmp freg
+end_mus:
+     ret
+music endp
 
+; GEN_SOUND
+;  发声
+GEN_SOUND proc near
+    push ax
+    push bx
+    push cx
+    push dx
+    push di
+    PUSH SI
+
+    CMP DI,1            ;频率表中1代表此时不发声
+    JE  wait1
+
+    mov al, 0b6H
+    out 43h, al         ;使能8253
+    mov dx, 12h
+    mov ax, 348ch
+    div di              ;获取所需频率送al，再传给8253
+    out 42h, al
+ 
+    mov al, ah
+    out 42h, al
+ 
+    in al, 61h
+    mov ah, al
+    or al, 3
+    out 61h, al         ;打开扬声器
+
+wait1:
+    mov cx, 3314
+    call waitf
+    push cx             ;保护
+delay1:
+    pop cx
+    dec bx
+    jnz wait1
+    mov al, ah
+    out 61h, al
+    POP SI
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+GEN_SOUND endp
+; DRAW_STARS
+;  画星星
+DRAW_STARS PROC
+         ADD starY,30
+         CMP starY,190
+         JL OKy
+         MOV starY,1
+         ADD starX,50
+        OKy:
+        CMP starX,310
+        JL OKx
+        MOV starX,1
+        OKx:
+        DRAW_STAR starX,starY,27H
+        RET
+DRAW_STARS ENDP
 ; SHOW_TIPS
 ; 子程序名：SHOW_TIPS
 ; 功能：显示提示信息
@@ -947,25 +1024,10 @@ DISP_CHAR PROC
         RET
 DISP_CHAR ENDP
 
-; DRAW_STARS
-;  画星星
-DRAW_STARS PROC
-         ADD starY,20
-         CMP starY,190
-         JL OKy
-         MOV starY,0
-         ADD starX,20
-        OKy:
-        CMP starX,310
-        JL OKx
-        MOV starX,0
-        OKx:
-        DRAW_STAR starX,starY,27H
-        RET
-DRAW_STARS ENDP
+
 
 ; WAITF
-;  简单的延时程序
+; 延时程序
 WAITF proc near
      push ax
 waitf1:
@@ -979,69 +1041,7 @@ waitf1:
      ret
 WAITF endp
 
-; music
-;  播放音乐
-music proc near
-     xor ax, ax
-freg:
-     mov di, [si]       ;di为频率
-     cmp di, 0FFFFH     ;若为-1则停止播放
-     je end_mus
-     mov bx, ds:[bp]    ;bx为节拍
-     call GEN_SOUND
-     add si, 2
-     add bp, 2
-     jmp freg
-end_mus:
-     ret
-music endp
 
-; GEN_SOUND
-;  发声
-GEN_SOUND proc near
-    push ax
-    push bx
-    push cx
-    push dx
-    push di
-    PUSH SI
-
-    CMP DI,1            ;频率表中1代表此时不发声
-    JE  wait1
-
-    mov al, 0b6H
-    out 43h, al         ;使能8253
-    mov dx, 12h
-    mov ax, 348ch
-    div di              ;获取所需频率送al，再传给8253
-    out 42h, al
- 
-    mov al, ah
-    out 42h, al
- 
-    in al, 61h
-    mov ah, al
-    or al, 3
-    out 61h, al         ;打开扬声器
-
-wait1:
-    mov cx, 3314
-    call waitf
-    push cx             ;保护
-delay1:
-    pop cx
-    dec bx
-    jnz wait1
-    mov al, ah
-    out 61h, al
-    POP SI
-    pop di
-    pop dx
-    pop cx
-    pop bx
-    pop ax
-    ret
-GEN_SOUND endp
 
 
 ;子过程定义END
