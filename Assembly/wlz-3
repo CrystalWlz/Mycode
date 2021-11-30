@@ -2,21 +2,23 @@
 DATA SEGMENT
 ;播放音乐所需变量 
     mayDAY_musFreq dw -1
-    opplaying DB "Sincerely",'$'
+    opplaying DB "OP:Sincerely",'$'
     opmusicInfo DB "For Violet Evergarden",'$'            ;标题
-    sincerelyFreq DW 196,330,294,330,1,370,330,294,1,196,330,294,330,1,294,330,370,370,1;6323,4322,6323,2344
-                 DW 196,294,330,370,1,294,294,1,196,294,196,294,330,370,1;62343,22,626234
-                 DW 196,330,294,330,1,370,330,294,1,196,330,294,330,1,440,330,294,294,1;6323,4322,6323,6322
-                 DW 196,294,330,370,391,440,1,370,330,294,-1;623456,432
+    sincerelyFreq DW 196,330,294,330,370,330,294,1,294,1,196,330,294,330,294,330,370,1,370,1;6323432,2,6323234,4,
+                 DW 196,294,330,370,330,294,1,294,1,196,294,196,294,330,370,1;623432,2,626234,
+                 DW 196,330,294,330,370,330,294,1,294,1,196,330,294,330,440,330,294,1,294,1;6323432,2,63236322,
+                 DW 196,294,330,370,391,440,370,330,294,-1;623456432
 
-    sincerelyTime DW 10,20,10,10,2,10,10,20,20,2,10,20,10,10,2,10,20,20,20
-                 DW 10,20,20,20,20,4,10,10,2,10,20,10,30,20,20
-                 DW 10,20,10,10,2,10,10,20,20,2,10,20,10,10,2,10,20,20,20
-                 DW 20,10,10,30,20,30,2,20,20,20
-        edplaying DB "mijixirodei",'$'
-        edmusicInfo DB "What I wish is your happiness",'$'
-        edFreq DW -1
-        edTime DW -1
+    sincerelyTime DW 25,50,25,50,25,50,25,3,47,25,25,50,25,50,25,50,25,3,47,25
+                 DW 25,50,50,50,125,25,3,47,25,25,50,25,50,25,150,25
+                 DW 25,50,25,50,25,50,25,3,47,25,25,50,25,50,25,50,25,3,47,25
+                 DW 25,50,25,50,25,50,25,25,125
+        edplaying DB "ED: mi chi si ru be",'$'
+        edmusicInfo DB "beng bu zhu le",'$'
+        edFreq DW 262,1,262,1,262,294,262,294,330,1,391,330,294,262,1,262,1;1,1,12123,5321,1,
+                DW 262,1,262,1,262,294,262,294,262,523,494,391,330,294,1,294,330,294,262,294,262,-1;1,1,12121!17532,232121
+        edTime DW 90,10,45,10,45,100,50,50,300,50,100,100,150,50,10,190,100
+                DW 90,10,45,10,45,100,50,50,100,100,150,25,25,90,10,50,50,100,50,50,200;连音需有5的间隔
         ;绘制星星所需变量
     starX DW 0
     starY DW 20
@@ -24,6 +26,7 @@ DATA SEGMENT
     rec1Y DW 175
     temp1 DW 0
     temp2 DW 0
+
     star db 0,0,0,0,1,1,0,0,0,0
          db 0,0,0,0,1,1,0,0,0,0 
          db 0,0,0,1,1,1,1,0,0,0 
@@ -35,7 +38,7 @@ DATA SEGMENT
          db 0,1,1,0,0,0,0,1,1,0 
          db 0,1,0,0,0,0,0,0,1,0
          ;显示图片所需变量
-    bmpfname db 'violet.bmp',0       ; 图片路径  
+    MainPic db 'violet.bmp',0       ; 图片路径  
     ED db 'ed.bmp',0
     OP DB 'op.bmp',0
     x0 dw 0  	                ; 当前显示界面的横坐标，初始为0
@@ -46,7 +49,7 @@ DATA SEGMENT
     bmpwidth dw 0               ; 位图宽度  
     bmplength dw 0              ; 位图长度 
     ;显示菜单
-    MENU_TIP DB "Press an alphabet to select a function",'$'
+    MENU_TIP DB "Star will fall after pressing C",'$'
     TIPS1 DB     7CH," Date:D             ",7CH,'$'
     TIPS2 DB     7CH," Time:T             ",7CH,'$'
     TIPS3 DB     7CH," Start The Timer:C  ",7CH,'$'
@@ -59,14 +62,14 @@ DATA SEGMENT
     colorIndex DB 0F8H
     colorHigh DB 00H
     colorLow DB 09H
-    BUFFER DB 100 DUP(0)        ;通用缓冲区
+    BUFFER DB 1000 DUP(0)        ;通用缓冲区
     ;显示日期时间所需变量
     DATE DB "DATE",1AH,"0000/00/00|000",'$','$'
     WEEK DB "MON","TUS","WED","THS","FRI","SAT","SUN" ;星期
     TIME DB "00:00:00",'$','$'
-    DATE_X DB 4                ;图形模式下x坐标范围0~49,y坐标范围0~39 
-    DATE_Y DB 2
-    TIME_X DB 2
+    DATE_X DB 2                ;图形模式下x坐标范围0~49,y坐标范围0~39 
+    DATE_Y DB 4
+    TIME_X DB 3
     TIME_Y DB 2
     CLK_NAME DB "CLK",'$'
     TIMER_NAME DB "TIMER",'$'
@@ -91,7 +94,7 @@ DATA SEGMENT
 DATA ENDS
 
 STACK SEGMENT STACK 'STACK'
-    DB 256 DUP(0)
+    DB 1024 DUP(0)
 STACK ENDS
 
 CODE SEGMENT 'CODE'
@@ -103,7 +106,7 @@ DRAW_STAR MACRO X,Y,COLOR
         mov bh,00                       ;显示页号为0 
         mov ah,0ch                      ;写像素，AL=颜色，BH=页码 CX=x，DX=y  
         mov si,-1                       ;将从第一个开始读 
-        mov dx,y                        ;得到球的左上角的坐标 
+        mov dx,y                        ;得到左上角的坐标 
         sub dx,1 
         mov cx,x 
         add cx,10
@@ -179,16 +182,14 @@ BEGIN:
         CALL READ_PHOTO
         CALL SET_COLOR 
         CALL SHOW_IMG  
-        SHOW_COLOR_CHAR 0EH,10,15,0B7H,1
         SHOW_STR opplaying,10,16
-        SHOW_COLOR_CHAR 0EH,10,26,0B7H,1
         SHOW_STR opmusicInfo,12,10
         MUS_ADDRESS sincerelyFreq, sincerelyTime    ;播放OP
         CALL music                
-
+MAIN_SHOW:
         CALL CLR_TIMER_STR
         CALL CLR_SRC
-        LEA DX,bmpfname
+        LEA DX,MainPic
         CALL OPEN_PHOTO                 ;读取主界面图片 
         CALL READ_PHOTO
         CALL SET_COLOR 
@@ -200,12 +201,13 @@ MAIN_LOOP:
         INT 16H     
         JNZ SCAN_BUTTON                 ;判断输入
         
-
+        SHOW_STR CLK_NAME,1,2
+        SHOW_STR TIME,2,2              ;显示时钟
         CMP timerStop_Flag,1
         JE NEXT1
-        SHOW_STR TIMER_NAME,3,2
-        SHOW_STR timerStr,4,2         ;显示计时器
-
+        SHOW_STR TIMER_NAME,6,2
+        SHOW_STR timerStr,7,2           ;显示计时器
+                   
         NEXT1:
                 CMP secUpdate,1                 ;8253的秒位发生变化
                 JAE SEC_PASSED
@@ -215,9 +217,13 @@ MAIN_LOOP:
         TIMER_START:
                 CALL UPDATE_TIMER_STR
                 JMP MAIN_LOOP
-        SEC_PASSED:      
-                
-                STAR_FALL:
+        SEC_PASSED:     
+                CALL SHOW_IMG                   ;显示图片
+                CALL SHOW_TIPS                  ;显示提示信息
+                SHOW_STR CLK_NAME,1,2
+                SHOW_STR TIME,2,2              ;显示时钟
+                SHOW_STR TIMER_NAME,6,2
+                SHOW_STR timerStr,7,2         ;显示计时器
                 CALL DRAW_STARS
                 MOV secUpdate,0         ;时间复位
                 CALL GET_TIME_FROM_CLK
@@ -295,30 +301,26 @@ MAIN_LOOP:
                         SHOW_STR DATE,DATE_Y,DATE_X
                         JMP MAIN_LOOP
                 PRESS_T:
-                        SHOW_STR CLK_NAME,1,2
-                        SHOW_STR TIME,2,2              ;显示时钟
                         JMP MAIN_LOOP
                 PRESS_C:
-                        CALL DRAW_STARS
                         MOV timerStart_Flag,1
                         MOV timerStop_Flag,0
                         CALL TIMER_INIT          ;定时器初始化
-                        CALL TIMER_ENABLE        ;定时器使能
+                        CALL TIMER_ENABLE       ;定时器使能                       
                         JMP MAIN_LOOP
                 PRESS_S:        
                         MOV timerStop_Flag,1
+                        MOV timerStart_Flag,0
                         JMP MAIN_LOOP
                 PRESS_R:
                         CALL CLR_TIMER_STR
                         CALL CLR_TIMER
                         CALL SHOW_IMG
                         CALL SHOW_TIPS
-                        CALL DRAW_STARS
                         MOV starY,1
                         MOV starX,1
-                        SHOW_STR TIMER_NAME,1,2
-                        SHOW_COLOR_CHAR 1AH,11,17,27H,1
-                        SHOW_STR timerStr,6,2
+                        SHOW_STR TIMER_NAME,6,2
+                        SHOW_STR timerStr,7,2
                         JMP MAIN_LOOP
                 PRESS_E:
                         CALL CLR_SRC
@@ -327,20 +329,18 @@ MAIN_LOOP:
                         CALL OPEN_PHOTO
                         CALL READ_PHOTO
                         CALL SHOW_IMG
-                        SHOW_COLOR_CHAR 0EH,10,15,0B7H,1
-                        SHOW_STR edplaying,10,16
-                        SHOW_COLOR_CHAR 0EH,10,26,0B7H,1
-                        SHOW_STR edmusicInfo,12,10
+                        SHOW_STR edplaying,20,20
+                        SHOW_STR edmusicInfo,21,10
                         MUS_ADDRESS edFreq, edTime    ;播放ed
                         CALL music
-                        JMP MAIN_LOOP
+                        JMP MAIN_SHOW
                 PRESS_Q:
                         JMP EXIT_MAIN
 ;主循环END
 EXIT_MAIN:
         ; MOV AH,0                        ;等待键盘输入后退出
         ; INT 16H
-        mov ax, 3  	                  ;返回80x25x16窗口
+        mov ax, 3  	                  ;返回窗口
         int 10h
         MOV AH,4CH
         INT 21H
@@ -617,7 +617,7 @@ PRINT_LINE_BREAK ENDP
 ;  打开图片文件
 ; 入口参数：DX存图片路径名
 OPEN_PHOTO PROC NEAR  
-;     LEA DX, bmpfname           
+;     LEA DX, MainPic           
     MOV AH, 3DH  
     MOV AL, 0  
     INT 21h  	
