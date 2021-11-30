@@ -49,13 +49,13 @@ DATA SEGMENT
     bmpwidth dw 0               ; 位图宽度  
     bmplength dw 0              ; 位图长度 
     ;显示菜单
-    MENU_TIP DB "Star will fall after pressing C",'$'
-    TIPS1 DB     7CH," Date:D             ",7CH,'$'
-    TIPS2 DB     7CH," Time:T             ",7CH,'$'
-    TIPS3 DB     7CH," Start The Timer:C  ",7CH,'$'
-    TIPS4 DB     7CH," Stop The Timer:S   ",7CH,'$'
+    MENU_TIP DB  7CH,"   Star will fall   ",7CH,'$'
+    TIPS1 DB     7CH,"  after pressing C  ",7CH,'$'
+    TIPS2 DB     7CH," Date:D       Time:T",7CH,'$'
+    TIPS3 DB     7CH,"  Start The Timer:C ",7CH,'$'
+    TIPS4 DB     7CH,"  Stop The Timer:S  ",7CH,'$'
     TIPS5 DB     7CH," Restart The Timer:R",7CH,'$'
-    TIPS6 DB     7CH," Play The ED:E      ",7CH,'$'    
+    TIPS6 DB     7CH,"   Play The ED:E    ",7CH,'$'    
     TIPS7 DB     7CH," Quit This Program:Q",7CH,'$'
     LINE_BREAK DB 0AH,0DH,'$'
     Info DB "Never know what love means.",'$'
@@ -219,11 +219,11 @@ MAIN_LOOP:
                 JMP MAIN_LOOP
         SEC_PASSED:     
                 CALL SHOW_IMG                   ;显示图片
-                CALL SHOW_TIPS                  ;显示提示信息
+                ;CALL SHOW_TIPS                  ;显示提示信息
                 SHOW_STR CLK_NAME,1,2
                 SHOW_STR TIME,2,2              ;显示时钟
-                SHOW_STR TIMER_NAME,6,2
-                SHOW_STR timerStr,7,2         ;显示计时器
+                ;SHOW_STR TIMER_NAME,6,2
+                ;SHOW_STR timerStr,7,2         ;显示计时器
                 CALL DRAW_STARS
                 MOV secUpdate,0         ;时间复位
                 CALL GET_TIME_FROM_CLK
@@ -310,7 +310,6 @@ MAIN_LOOP:
                         JMP MAIN_LOOP
                 PRESS_S:        
                         MOV timerStop_Flag,1
-                        MOV timerStart_Flag,0
                         JMP MAIN_LOOP
                 PRESS_R:
                         CALL CLR_TIMER_STR
@@ -330,7 +329,7 @@ MAIN_LOOP:
                         CALL READ_PHOTO
                         CALL SHOW_IMG
                         SHOW_STR edplaying,20,20
-                        SHOW_STR edmusicInfo,21,10
+                        SHOW_STR edmusicInfo,21,20
                         MUS_ADDRESS edFreq, edTime    ;播放ed
                         CALL music
                         JMP MAIN_SHOW
