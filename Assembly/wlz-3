@@ -49,7 +49,7 @@ DATA SEGMENT
     bmpwidth dw 0               ; 位图宽度  
     bmplength dw 0              ; 位图长度 
     ;显示菜单
-    MENU_TIP DB  7CH,"   Star will fall   ",7CH,'$'
+    MENU_TIP DB  7CH,"   Stars will fall  ",7CH,'$'
     TIPS1 DB     7CH,"  after pressing C  ",7CH,'$'
     TIPS2 DB     7CH," Date:D       Time:T",7CH,'$'
     TIPS3 DB     7CH,"  Start The Timer:C ",7CH,'$'
@@ -202,18 +202,18 @@ MAIN_LOOP:
         JNZ SCAN_BUTTON                 ;判断输入
         SHOW_STR CLK_NAME,1,2
         SHOW_STR TIME,2,2              ;显示时钟
-        CMP showDate_Flag,1
+        CMP showDate_Flag,1             ;是否显示日期
         JNE NSD
+        CALL GET_DATE
         SHOW_STR DATE,DATE_Y,DATE_X
         NSD:
-        CALL GET_DATE
         CMP timerStop_Flag,1
         JE NEXT1
         SHOW_STR TIMER_NAME,6,2
         SHOW_STR timerStr,7,2           ;显示计时器           
         NEXT1:
-                CMP timerStart_Flag,1           ;启动8253定时器
-                JE TIMER_START
+                CMP timerStart_Flag,1           
+                JE TIMER_START          ;启动8253定时器
                 CALL GET_TIME
                 JMP MAIN_LOOP
         TIMER_START:
@@ -373,7 +373,7 @@ CLR_SRC PROC
         RET
 CLR_SRC ENDP
 ; music
-;  播放音乐
+; 播放音乐
 music proc near
      xor ax, ax
 freg:
@@ -390,7 +390,7 @@ end_mus:
 music endp
 
 ; GEN_SOUND
-;  发声
+; 发声
 GEN_SOUND proc near
     push ax
     push bx
@@ -436,7 +436,7 @@ delay1:
     ret
 GEN_SOUND endp
 ; DRAW_STARS
-;  画星星
+; 画星星
 DRAW_STARS PROC
          ADD starY,30
          CMP starY,190
@@ -474,8 +474,7 @@ SHOW_TIPS ENDP
 
 ; GET_TIME
 ; 获取时间，并填充TIME数组
-; 所用寄存器：ch,cl,dh中分别存放时分秒
-; 无
+; 寄存器：ch,cl,dh中分别存放时分秒
 GET_TIME PROC
         PUSH AX
         PUSH BX
@@ -566,21 +565,17 @@ CLR_TIME ENDP
 
 ;SHOW_TIME
 ; 显示日期
-; 所用寄存器：
-; 
 SHOW_TIME PROC
         PUSH DX 
         PUSH AX
         SHOW_STR TIME,TIME_X,TIME_Y
-        ; CALL PRINT_LINE_BREAK
         POP AX
         POP DX
 SHOW_TIME ENDP
 
 ; GET_DATE
 ; 获取日期，并填充给DATE数组
-; 所用寄存器：CX,DH,DL,AL
-; 无
+; 寄存器：CX,DH,DL,AL
 GET_DATE PROC  
         PUSH AX
         PUSH CX
@@ -635,7 +630,7 @@ GET_DATE ENDP
 
 ; SHOW_DATE
 ; 显示日期
-; 所用寄存器：DX,AH
+; 寄存器：DX,AH
 ; 出口参数：无
 SHOW_DATE PROC
         PUSH DX
@@ -652,7 +647,7 @@ SHOW_DATE ENDP
 
 ; NUM2ASC
 ; 将数字转为ASC2码形式
-; 所用寄存器：BX,AX
+; 寄存器：BX,AX
 ; AX存待转换数字，BX存字符串末尾
 ; 出口参数：BX指向字符串末尾的下一个位置
 NUM2ASC PROC
@@ -684,7 +679,7 @@ PRINT_LINE_BREAK PROC
 PRINT_LINE_BREAK ENDP
 
 ; OPEN_PHOTO
-;  打开图片文件
+; 打开图片文件
 ; DX存图片路径名
 OPEN_PHOTO PROC NEAR  
 ;     LEA DX, MainPic           
@@ -696,7 +691,7 @@ OPEN_PHOTO PROC NEAR
 OPEN_PHOTO ENDP  
 
 ; READ_PHOTO
-;  读取图片文件，获取位图信息函数  
+; 读取图片文件，获取位图信息函数  
 READ_PHOTO proc near  
         ; 移动文件指针,bx = 文件代号， cx:dx = 位移量， al = 0 即从文件头绝对位移  
         mov ah, 42h  
@@ -737,7 +732,7 @@ READ_PHOTO proc near
 READ_PHOTO endp  
 
 ; SET_COLOR
-;  设置调色板输出色彩索引号及rgb数据共写256次   
+; 设置调色板输出色彩索引号及rgb数据共写256次   
 SET_COLOR proc near  
         ;设置256色,320*200像素  640*480
         mov ax, 0013h  
@@ -775,7 +770,7 @@ SET_COLOR proc near
 SET_COLOR endp  
 
 ; SHOW_IMG
-;  显示图片
+; 显示图片
 SHOW_IMG proc near  
         mov bx, 0a000h          ; 写屏 
         mov es, bx  
@@ -840,7 +835,7 @@ exit:
 SHOW_IMG endp 
 
 ; TIMER_INIT
-;  初始化8253中断定时器
+; 初始化8253中断定时器
 TIMER_INIT PROC
         PUSH BX
         PUSH AX
@@ -868,7 +863,7 @@ TIMER_INIT PROC
 TIMER_INIT ENDP
 
 ; TIMER_ENABLE
-;  使能定时中断
+; 使能定时中断
 TIMER_ENABLE PROC
         MOV AL,0FCH
         OUT 21H,AL      ;写中断掩码寄存器
@@ -877,7 +872,7 @@ TIMER_ENABLE PROC
 TIMER_ENABLE ENDP
 
 ; TIMER
-;  定时中断服务程序
+; 定时中断服务程序
 TIMER PROC FAR
         PUSH AX
         PUSH BX
@@ -967,7 +962,6 @@ UPDATE_TIMER_STR ENDP
 CLR_TIMER_STR PROC
         PUSH BX
         LEA BX,timerStr
-        ;00:00:00:0
         MOV BYTE PTR [BX],'0'
         MOV BYTE PTR [BX+1],'0'
         MOV BYTE PTR [BX+3],'0'
@@ -990,7 +984,7 @@ CLR_TIMER PROC
 CLR_TIMER ENDP
 
 ; DISP_CLK
-;  显示定时器时间
+; 显示定时器时间
 DISP_CLK PROC
         PUSH BX
         PUSH AX
@@ -1007,7 +1001,7 @@ DISP_LOOP:
 DISP_CLK ENDP
 
 ; DISP_CHAR
-;  显示一个字符
+; 显示一个字符
 ; AL存放待显示字符
 DISP_CHAR PROC
         PUSH BX
@@ -1035,9 +1029,5 @@ waitf1:
      ret
 WAITF endp
 
-
-
-
-;子过程定义END
 CODE ENDS
     END START
