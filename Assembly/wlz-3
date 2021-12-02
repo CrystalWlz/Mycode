@@ -202,27 +202,33 @@ MAIN_LOOP:
         JNZ SCAN_BUTTON                 ;判断输入
         SHOW_STR CLK_NAME,1,2
         SHOW_STR TIME,2,2              ;显示时钟
+        CMP showDate_Flag,1
+        JNE NSD
+        SHOW_STR DATE,DATE_Y,DATE_X
+        NSD:
+        CALL GET_DATE
         CMP timerStop_Flag,1
         JE NEXT1
         SHOW_STR TIMER_NAME,6,2
         SHOW_STR timerStr,7,2           ;显示计时器           
         NEXT1:
-                CMP secUpdate,1                 ;8253的秒位发生变化
-                JAE SEC_PASSED
                 CMP timerStart_Flag,1           ;启动8253定时器
                 JE TIMER_START
                 CALL GET_TIME
+                JMP MAIN_LOOP
         TIMER_START:
+                CMP secUpdate,1                 ;8253的秒位发生变化
+                JAE SEC_PASSED
                 CALL UPDATE_TIMER_STR
                 JMP MAIN_LOOP
-        SEC_PASSED:     
-                CALL SHOW_IMG                   ;显示图片
-                CALL SHOW_TIPS                  ;显示提示信息
-                SHOW_STR CLK_NAME,1,2
-                SHOW_STR TIME,2,2              ;显示时钟
-                SHOW_STR TIMER_NAME,6,2
-                SHOW_STR timerStr,7,2         ;显示计时器
-                CALL DRAW_STARS
+        SEC_PASSED:
+                CMP timerStop_Flag,1
+                JE NSTAR     
+                CALL CLR_SRC  
+                CALL SHOW_IMG                   
+                CALL SHOW_TIPS
+                CALL DRAW_STARS         ;显示星星       
+                NSTAR:                 
                 MOV secUpdate,0         ;时间复位
                 CALL GET_TIME_FROM_CLK
                 JMP MAIN_LOOP
@@ -296,7 +302,6 @@ MAIN_LOOP:
                 PRESS_D:
                         CALL GET_DATE
                         MOV showDate_Flag,1
-                        SHOW_STR DATE,DATE_Y,DATE_X
                         JMP MAIN_LOOP
                 PRESS_T:
                         JMP MAIN_LOOP
@@ -308,7 +313,7 @@ MAIN_LOOP:
                         CALL DRAW_STARS                      
                         JMP MAIN_LOOP
                 PRESS_S:        
-                        MOV timerStart_Flag,0
+                        ;MOV timerStart_Flag,0
                         MOV timerStop_Flag,1
                         JMP MAIN_LOOP
                 PRESS_R:
