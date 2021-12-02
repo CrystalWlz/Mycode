@@ -1,6 +1,6 @@
 
 DATA SEGMENT
-;播放音乐所需变量 
+;播放音乐所需数据 
     mayDAY_musFreq dw -1
     opplaying DB "OP:Sincerely",'$'
     opmusicInfo DB "For Violet Evergarden",'$'            ;标题
@@ -19,7 +19,7 @@ DATA SEGMENT
                 DW 262,1,262,1,262,294,262,294,262,523,494,391,330,294,1,294,330,294,262,294,262,-1;1,1,12121!17532,232121
         edTime DW 90,10,45,10,45,100,50,50,300,50,100,100,150,50,10,190,100
                 DW 90,10,45,10,45,100,50,50,100,100,150,25,25,90,10,50,50,100,50,50,200;连音需有5的间隔
-        ;绘制星星所需变量
+        ;绘制星星所需数据
     starX DW 0
     starY DW 20
     rec1X DW 118
@@ -37,7 +37,7 @@ DATA SEGMENT
          db 0,0,1,1,0,0,1,1,0,0 
          db 0,1,1,0,0,0,0,1,1,0 
          db 0,1,0,0,0,0,0,0,1,0
-         ;显示图片所需变量
+         ;显示图片所需数据
     MainPic db 'violet.bmp',0       ; 图片路径  
     ED db 'ed.bmp',0
     OP DB 'op.bmp',0
@@ -63,7 +63,7 @@ DATA SEGMENT
     colorHigh DB 00H
     colorLow DB 08H
     BUFFER DB 1000 DUP(0)        ;通用缓冲区
-    ;显示日期时间所需变量
+    ;显示日期时间所需数据
     DATE DB "DATE:0000/00/00|000",'$','$'
     WEEK DB "MON","TUS","WED","THS","FRI","SAT","SUN" ;星期
     TIME DB "00:00:00",'$','$'
@@ -75,7 +75,7 @@ DATA SEGMENT
     TIMER_NAME DB "TIMER",'$'
     showDate_Flag DB 0
     
-    ;8253中断定时器所需变量
+    ;8253中断定时器所需数据
     count100 DB 0               ; 分频系数
     fre100 DB 0                 ; 100hz
     fre1000 DB 0                ; 1000hz
@@ -131,7 +131,7 @@ DRAW_STAR MACRO X,Y,COLOR
                 jb ROWS                 ;当100个点全部画完后，跳出      
         setstarexit: 
         ENDM 
-;播放音乐辅助宏  
+;音乐地址  
 MUS_ADDRESS MACRO A,B
     LEA SI,A
     LEA BP,DS:B
@@ -350,8 +350,7 @@ EXIT_MAIN:
 
 ;子过程定义
 ; CLR_SRC
-; 子程序名：CLR_SRC
-; 功能：清屏
+; 清屏
 CLR_SRC PROC
         PUSH AX
         PUSH BX
@@ -448,8 +447,7 @@ DRAW_STARS PROC
         RET
 DRAW_STARS ENDP
 ; SHOW_TIPS
-; 子程序名：SHOW_TIPS
-; 功能：显示提示信息
+; 显示提示信息
 SHOW_TIPS PROC        
         PUSH AX
         PUSH DX
@@ -470,11 +468,9 @@ SHOW_TIPS PROC
 SHOW_TIPS ENDP
 
 ; GET_TIME
-; 子程序名：GET_TIME
-; 功能：获取时间，并填充TIME数组
+; 获取时间，并填充TIME数组
 ; 所用寄存器：ch,cl,dh中分别存放时分秒
-; 入口参数：无
-; 出口参数：无
+; 无
 GET_TIME PROC
         PUSH AX
         PUSH BX
@@ -504,11 +500,7 @@ GET_TIME PROC
 GET_TIME ENDP
 
 ; GET_TIME_FROM_CLK
-; 子程序名：GET_TIME_FROM_CLK
-; 功能：从定时器继续当前时钟
-; note:由于定时中断服务程序占用了中断向量表中08H的位置，导致
-;       INT21H中获取系统时间的功能无法继续使用，故需要此辅助
-;       函数继续更新时间
+; 从定时器继续当前时钟
 GET_TIME_FROM_CLK PROC FAR
         ;00:00:00
         PUSH AX
@@ -551,7 +543,7 @@ GET_TIME_FROM_CLK PROC FAR
 GET_TIME_FROM_CLK ENDP
 
 ; CLR_TIME
-; 功能：清空TIME数组
+; 清空TIME数组
 CLR_TIME PROC FAR
         PUSH BX
         MOV BX,OFFSET TIME
@@ -568,10 +560,9 @@ CLR_TIME PROC FAR
 CLR_TIME ENDP
 
 ;SHOW_TIME
-; 功能：显示日期
+; 显示日期
 ; 所用寄存器：
-; 入口参数：
-; 出口参数：无
+; 
 SHOW_TIME PROC
         PUSH DX 
         PUSH AX
@@ -582,10 +573,9 @@ SHOW_TIME PROC
 SHOW_TIME ENDP
 
 ; GET_DATE
-; 功能：获取日期，并填充给DATE数组
+; 获取日期，并填充给DATE数组
 ; 所用寄存器：CX,DH,DL,AL
-; 入口参数：无
-; 出口参数：无
+; 无
 GET_DATE PROC  
         PUSH AX
         PUSH CX
@@ -639,9 +629,8 @@ GET_DATE PROC
 GET_DATE ENDP
 
 ; SHOW_DATE
-; 功能：显示日期
+; 显示日期
 ; 所用寄存器：DX,AH
-; 入口参数：
 ; 出口参数：无
 SHOW_DATE PROC
         PUSH DX
@@ -657,9 +646,9 @@ SHOW_DATE PROC
 SHOW_DATE ENDP
 
 ; NUM2ASC
-; 功能：将数字转为ASC2码形式
+; 将数字转为ASC2码形式
 ; 所用寄存器：BX,AX
-; 入口参数：AX存待转换数字，BX存字符串末尾
+; AX存待转换数字，BX存字符串末尾
 ; 出口参数：BX指向字符串末尾的下一个位置
 NUM2ASC PROC
         PUSH DX
@@ -677,7 +666,7 @@ NUM2ASC PROC
 NUM2ASC ENDP
 
 ; PRINT_LINE_BREAK
-; 功能：打印一个换行符
+; 打印一个换行符
 PRINT_LINE_BREAK PROC
         PUSH DX
         PUSH AX
@@ -691,7 +680,7 @@ PRINT_LINE_BREAK ENDP
 
 ; OPEN_PHOTO
 ;  打开图片文件
-; 入口参数：DX存图片路径名
+; DX存图片路径名
 OPEN_PHOTO PROC NEAR  
 ;     LEA DX, MainPic           
     MOV AH, 3DH  
@@ -1014,7 +1003,7 @@ DISP_CLK ENDP
 
 ; DISP_CHAR
 ;  显示一个字符
-; 入口参数：AL存放待显示字符
+; AL存放待显示字符
 DISP_CHAR PROC
         PUSH BX
         MOV BX,0
