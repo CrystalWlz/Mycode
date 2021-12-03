@@ -67,7 +67,7 @@ DATA SEGMENT
     DATE DB "DATE:0000/00/00|000",'$','$'
     WEEK DB "MON","TUS","WED","THS","FRI","SAT","SUN" ;星期
     TIME DB "00:00:00",'$','$'
-    DATE_X DB 2                ;图形模式下x坐标范围0~49,y坐标范围0~39 
+    DATE_X DB 2                ;图形模式下x坐标范围0~49,y坐标范围0~39 ，注意x为行数，y为列数，与图形坐标轴不一样。
     DATE_Y DB 4
     TIME_X DB 3
     TIME_Y DB 2
@@ -839,15 +839,16 @@ SHOW_IMG endp
 TIMER_INIT PROC
         PUSH BX
         PUSH AX
-        ;将timer中断程序放入中断地址表08h的位置中
-        CLI 
-        MOV AX,0
-        MOV ES,AX
-        MOV DI,20H      ;8*4=32=20h
-        MOV AX,OFFSET TIMER
-        STOSW
-        MOV AX,CS
-        STOSW
+        ;中断服务程序的装载
+        CLI             ;使if=0,禁止中断
+        MOV AX,0;       ;直接写入法，把中断服务程序地址写入中断向量表
+        MOV ES,AX       ;表段地址      
+        MOV DI,20H      ;表偏移地址=8*4=32=20h，将timer中断程序放入中断地址表08h的位置中
+        MOV AX,OFFSET TIMER     ;获取timer地址
+        STOSW           ;写入偏移地址
+        MOV AX,CS       ;获取段地址（其实就是cs
+        STOSW           ;写入段地址
+
         ;定时器参数配制，使用通道0，每秒中断100次
         MOV AL,36H
         OUT 43H,AL
@@ -867,7 +868,7 @@ TIMER_INIT ENDP
 TIMER_ENABLE PROC
         MOV AL,0FCH
         OUT 21H,AL      ;写中断掩码寄存器
-        STI             ;使能8086中断
+        STI             ;if置1，使能8086中断
         RET
 TIMER_ENABLE ENDP
 
@@ -914,7 +915,7 @@ ADDHOUR:
         INC tenHour
         MOV hour,'0'
 TIMERX:
-        MOV AL,20H
+        MOV AL,20H      ;XT机的话得给8259A中断结束命令
         OUT 20H,AL
 
         POP BX
